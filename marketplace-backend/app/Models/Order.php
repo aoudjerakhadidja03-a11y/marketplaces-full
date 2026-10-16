@@ -10,6 +10,8 @@ class Order extends Model
         'user_id',
         'supplier_id',
         'total_amount',
+        'subtotal',
+        'total',
         'status',
         'payment_method',
         'payment_status',
