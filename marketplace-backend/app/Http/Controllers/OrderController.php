@@ -98,7 +98,7 @@ class OrderController extends Controller
                 'shipping_address' => $request->shipping_address,
                 'phone' => $request->phone,
                ]);
-               
+
                 foreach ($items as $item) {
                     OrderItem::create([
                         'order_id' => $order->id,
