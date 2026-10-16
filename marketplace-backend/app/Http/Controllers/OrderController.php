@@ -114,19 +114,20 @@ class OrderController extends Controller
 
                 // Create initial payment record
                 Payment::create([
-                    'order_id' => $order->id,
-                    'payment_method' => $request->payment_method,
-                    'amount' => $orderTotal,
-                    'status' => 'pending',
+                     'order_id' => $order->id,
+                     'mode' => $request->payment_method,
+                     'amount' => $orderTotal,
+                     'status' => 'pending',
+                  
                 ]);
-
+    
                 // Create initial shipment record
                 Shipment::create([
-                    'order_id' => $order->id,
-                    'status' => 'pending',
-                    'customer_confirmation' => 'pending',
-                ]);
-
+                     'order_id' => $order->id,
+                     'delivery_company_id' => 7,
+                     'delivery_status' => 'preparing',
+                     'customer_confirmation' => 'pending',
+               ]);
                 // Auto-create order conversation between customer and supplier
                 Conversation::create([
                     'order_id' => $order->id,
