@@ -85,18 +85,20 @@ class OrderController extends Controller
             foreach ($itemsBySupplier as $supplierId => $items) {
                 $orderTotal = array_sum(array_column($items, 'total_price'));
 
-                $order = Order::create([
-                    'user_id' => $user->id,
-                    'supplier_id' => $supplierId,
-                    'total_amount' => $orderTotal,
-                    'status' => 'pending',
-                    'payment_method' => $request->payment_method,
-                    'payment_status' => 'unpaid',
-                    'risk_level_at_order' => $user->risk_level,
-                    'shipping_address' => $request->shipping_address,
-                    'phone' => $request->phone,
-                ]);
-
+               $order = Order::create([
+                'user_id' => $user->id,
+                'supplier_id' => $supplierId,
+                'total_amount' => $orderTotal,
+                'subtotal' => $orderTotal,
+                'total' => $orderTotal,
+                'status' => 'pending',
+                'payment_method' => $request->payment_method,
+                'payment_status' => 'unpaid',
+                'risk_level_at_order' => $user->risk_level,
+                'shipping_address' => $request->shipping_address,
+                'phone' => $request->phone,
+               ]);
+               
                 foreach ($items as $item) {
                     OrderItem::create([
                         'order_id' => $order->id,
