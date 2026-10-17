@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { Package, Truck, CheckCircle2, ShoppingBag, ShieldCheck, MessageSquare, Bot, ArrowRight, RefreshCcw } from 'lucide-react';
+import { ShieldCheck, MessageSquare, Bot, ArrowRight, RefreshCcw, ShoppingBag } from 'lucide-react';
 import { ReturnCounterWidget } from '../../components/ReturnCounterWidget';
 import { AiReturnAssistantModal } from '../../components/AiReturnAssistantModal';
 
@@ -10,75 +10,51 @@ export const CustomerDashboard = () => {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
-  const defaultCustomerData = {
-    metrics: {
-      total_orders: 2,
-      pending_orders: 1,
-      delivered_orders: 1,
-      total_spent: 14300,
-    },
-    recent_orders: [
-      {
-        id: 1042,
-        created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-        total_amount: '8900.00',
-        status: 'delivered',
-        supplier: { shop_name: 'Tech DZ Pro' },
-      },
-      {
-        id: 1043,
-        created_at: new Date().toISOString(),
-        total_amount: '5400.00',
-        status: 'in_transit',
-        supplier: { shop_name: 'Élégance Couture Alger' },
-      }
-    ]
-  };
-
-  useEffect(() => {
+  const loadDashboard = () => {
+    setLoading(true);
+    setError('');
     api.get('/dashboard/customer')
-      .then((res) => {
-        if (res.data && res.data.metrics) {
-          setData(res.data);
-        } else {
-          setData(defaultCustomerData);
-        }
-      })
-      .catch(() => setData(defaultCustomerData))
+      .then((res) => setData(res.data))
+      .catch(() => setError('Impossible de charger vos données. Vérifiez que le serveur est démarré.'))
       .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) return <div className="container" style={{ padding: '4rem 1.5rem', textAlign: 'center' }}>Chargement de votre Tableau de Bord Client...</div>;
-
-  const activeData = data || defaultCustomerData;
-  let localPlaced = [];
-  try {
-    localPlaced = JSON.parse(localStorage.getItem('placed_orders') || '[]');
-  } catch (e) {}
-
-  const recentOrders = [...localPlaced, ...(activeData?.recent_orders || [])];
-  const metrics = {
-    ...activeData?.metrics,
-    total_orders: (activeData?.metrics?.total_orders || 2) + localPlaced.length,
-    pending_orders: (activeData?.metrics?.pending_orders || 1) + localPlaced.length,
-    total_spent: (activeData?.metrics?.total_spent || 14300) + localPlaced.reduce((s, o) => s + (parseFloat(o.total_amount) || 0), 0),
   };
+
+  useEffect(() => { loadDashboard(); }, []);
+
+  if (loading) {
+    return <div className="container" style={{ padding: '4rem 1.5rem', textAlign: 'center' }}>Chargement de votre Tableau de Bord Client...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="container" style={{ padding: '4rem 1.5rem', textAlign: 'center' }}>
+        <p style={{ color: 'var(--danger, #dc2626)', marginBottom: '1rem' }}>{error}</p>
+        <button className="btn btn-primary" onClick={loadDashboard}>Réessayer</button>
+      </div>
+    );
+  }
+
+  const metrics = data?.metrics || {};
+  const recentOrders = data?.recent_orders || [];
+  const riskLevel = metrics.user_risk_level || 'reliable';
 
   return (
     <div className="container" style={{ padding: '2.5rem 1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
-      
-      {/* Welcome Header */}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
             <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: 0 }}>Espace Client & Mes Commandes</h1>
-            <span className="badge badge-success" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <ShieldCheck size={14} /> Acheteur Vérifié Fiable
-            </span>
+            {riskLevel === 'reliable' && (
+              <span className="badge badge-success" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <ShieldCheck size={14} /> Acheteur Vérifié Fiable
+              </span>
+            )}
           </div>
-          <p style={{ color: 'var(--text-muted)', margin: 0 }}>Bienvenue, {user?.name || 'Yacine Client'}</p>
+          <p style={{ color: 'var(--text-muted)', margin: 0 }}>Bienvenue, {user?.name || ''}</p>
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -87,11 +63,7 @@ export const CustomerDashboard = () => {
             className="btn"
             style={{
               background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontWeight: 700,
+              color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700,
               boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)',
             }}
           >
@@ -106,38 +78,22 @@ export const CustomerDashboard = () => {
         </div>
       </div>
 
-      {/* KPI Stat Cards */}
       <div className="grid grid-4" style={{ marginBottom: '2rem', gap: '1rem' }}>
-        <div className="card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.25rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.4rem', fontWeight: 600 }}>Commandes Totales</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)' }}>{metrics.total_orders || 2}</div>
-        </div>
-
-        <div className="card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.25rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.4rem', fontWeight: 600 }}>En Cours de Livraison</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--primary)' }}>{metrics.pending_orders || 1}</div>
-        </div>
-
-        <div className="card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.25rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.4rem', fontWeight: 600 }}>Commandes Confirmées</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--success)' }}>{metrics.delivered_orders || 1}</div>
-        </div>
-
-        <div className="card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.25rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.4rem', fontWeight: 600 }}>Total des Achats</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--primary)' }}>
-            {(metrics.total_spent || 14300).toLocaleString()} DZD
+        {[
+          { label: 'Commandes Totales', value: metrics.total_orders ?? 0, color: 'var(--text-main)' },
+          { label: 'En Cours de Livraison', value: metrics.pending_orders ?? 0, color: 'var(--primary)' },
+          { label: 'Commandes Livrées', value: metrics.delivered_orders ?? 0, color: 'var(--success)' },
+          { label: 'Total des Achats', value: `${Number(metrics.total_spent ?? 0).toLocaleString()} DZD`, color: 'var(--primary)' },
+        ].map((kpi) => (
+          <div key={kpi.label} className="card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.25rem' }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.4rem', fontWeight: 600 }}>{kpi.label}</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: kpi.color }}>{kpi.value}</div>
           </div>
-        </div>
+        ))}
       </div>
 
-      {/* Return Counter Widget */}
-      <ReturnCounterWidget
-        userRole="customer"
-        onOpenAiModal={() => setIsAiModalOpen(true)}
-      />
+      <ReturnCounterWidget userRole="customer" onOpenAiModal={() => setIsAiModalOpen(true)} />
 
-      {/* Recent Orders Timeline */}
       <div className="card" style={{ padding: '1.8rem', marginTop: '2rem', background: 'var(--card-bg)', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Suivi des Commandes Récentes</h3>
@@ -153,20 +109,17 @@ export const CustomerDashboard = () => {
                 <div>
                   <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--primary)' }}>Commande #{order.id}</div>
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                    Vendeur : <strong style={{ color: 'var(--text-main)' }}>{order.supplier?.shop_name || 'Tech DZ Pro'}</strong> · Reçu le {new Date(order.created_at).toLocaleDateString()}
+                    Vendeur : <strong style={{ color: 'var(--text-main)' }}>{order.supplier?.shop_name || '—'}</strong> · Reçu le {new Date(order.created_at).toLocaleDateString()}
                   </div>
                 </div>
-
                 <div>
                   <span className={`badge ${order.status === 'delivered' ? 'badge-success' : 'badge-info'}`}>
-                    {order.status === 'delivered' ? '✓ Livré & Confirmé' : '📦 En cours de livraison (Yalidine)'}
+                    {order.status}
                   </span>
                 </div>
-
                 <div style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '1.1rem' }}>
-                  {parseFloat(order.total_amount).toLocaleString()} DZD
+                  {parseFloat(order.total_amount || order.total || 0).toLocaleString()} DZD
                 </div>
-
                 <div style={{ display: 'flex', gap: '0.6rem' }}>
                   <Link to={`/customer/chat/${order.id}`} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                     <MessageSquare size={14} /> Discuter Vendeur
@@ -181,12 +134,7 @@ export const CustomerDashboard = () => {
         )}
       </div>
 
-      {/* AI Assistant Modal */}
-      <AiReturnAssistantModal
-        isOpen={isAiModalOpen}
-        onClose={() => setIsAiModalOpen(false)}
-        role="customer"
-      />
+      <AiReturnAssistantModal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} role="customer" />
     </div>
   );
 };
