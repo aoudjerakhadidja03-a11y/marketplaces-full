@@ -7,7 +7,8 @@ if [ -z "${APP_KEY:-}" ]; then
 fi
 
 php artisan migrate --force
-php artisan db:seed --class=InitialCategorySeeder --force
+mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
 
 exec "$@"
