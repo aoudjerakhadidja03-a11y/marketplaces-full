@@ -50,57 +50,63 @@ export const CheckoutPage = () => {
       phone: phone || '0550123456',
     };
 
-    // Try backend API first if available
+    let createdRealOrderId = null;
     try {
-      await api.post('/orders', payload);
+      const res = await api.post('/orders', payload);
+      if (res.data?.orders && res.data.orders.length > 0) {
+        createdRealOrderId = res.data.orders[0].id;
+      }
     } catch (err) {
-      console.warn('Backend orders unavailable, saving locally for resilient demo:', err);
+      console.warn('Backend order submission fallback:', err);
     }
 
-    // Persist order in local state for seamless jury demo
-    const newOrderId = Math.floor(1000 + Math.random() * 9000);
-    const newOrder = {
-      id: newOrderId,
-      created_at: new Date().toISOString(),
-      status: paymentMethod === 'online' ? 'confirmée_payée' : 'en_attente_livraison',
-      delivery_confirmation: null,
-      total_amount: String(grandTotalVal),
-      phone: phone || '0550123456',
-      shipping_address: shippingAddress || 'Alger Centre, Algérie',
-      payment_method: paymentMethod,
-      supplier: {
-        shop_name: itemsToOrder[0]?.product?.supplier?.shop_name || 'Tech DZ Pro (Boutique Certifiée)',
-      },
-      shipment: {
-        tracking_number: `YAL-${Math.floor(100000 + Math.random() * 900000)}`,
-        status: 'Pris en charge par Yalidine Express (58 Wilayas)',
-      },
-      items: itemsToOrder.map((item, idx) => ({
-        id: idx + 1,
-        product_id: item.product.id,
-        quantity: item.quantity,
-        unit_price: String(item.product.price),
-        total_price: String(item.product.price * item.quantity),
-        product: {
-          id: item.product.id,
-          name: item.product.name,
-          image_url: item.product.image_url,
-          price: item.product.price,
-        }
-      }))
-    };
+    const finalOrderId = createdRealOrderId || Math.floor(1000 + Math.random() * 9000);
 
-    try {
-      const existingOrders = JSON.parse(localStorage.getItem('placed_orders') || '[]');
-      existingOrders.unshift(newOrder);
-      localStorage.setItem('placed_orders', JSON.stringify(existingOrders));
-    } catch (storageErr) {
-      console.error(storageErr);
+    // Only store locally if backend was offline
+    if (!createdRealOrderId) {
+      const newOrder = {
+        id: finalOrderId,
+        created_at: new Date().toISOString(),
+        status: paymentMethod === 'online' ? 'confirmée_payée' : 'en_attente_livraison',
+        delivery_confirmation: null,
+        total_amount: String(grandTotalVal),
+        phone: phone || '0550123456',
+        shipping_address: shippingAddress || 'Alger Centre, Algérie',
+        payment_method: paymentMethod,
+        supplier: {
+          shop_name: itemsToOrder[0]?.product?.supplier?.shop_name || 'Tech DZ Pro (Boutique Certifiée)',
+        },
+        shipment: {
+          tracking_number: `YAL-${Math.floor(100000 + Math.random() * 900000)}`,
+          status: 'Pris en charge par Yalidine Express (58 Wilayas)',
+        },
+        items: itemsToOrder.map((item, idx) => ({
+          id: idx + 1,
+          product_id: item.product.id,
+          quantity: item.quantity,
+          unit_price: String(item.product.price),
+          total_price: String(item.product.price * item.quantity),
+          product: {
+            id: item.product.id,
+            name: item.product.name,
+            image_url: item.product.image_url,
+            price: item.product.price,
+          }
+        }))
+      };
+
+      try {
+        const existingOrders = JSON.parse(localStorage.getItem('placed_orders') || '[]');
+        existingOrders.unshift(newOrder);
+        localStorage.setItem('placed_orders', JSON.stringify(existingOrders));
+      } catch (storageErr) {
+        console.error(storageErr);
+      }
     }
 
     clearCart();
     setLoading(false);
-    navigate('/customer/orders', { state: { orderSuccess: true, orderId: newOrderId } });
+    navigate('/customer/orders', { state: { orderSuccess: true, orderId: finalOrderId } });
   };
 
   return (

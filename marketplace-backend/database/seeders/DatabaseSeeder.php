@@ -320,6 +320,8 @@ class DatabaseSeeder extends Seeder
             'user_id' => $customer1->id,
             'supplier_id' => $supp1->id,
             'total_amount' => 14300.00,
+            'subtotal' => 14300.00,
+            'total' => 14300.00,
             'status' => 'delivered',
             'payment_method' => 'cod',
             'payment_status' => 'paid',
@@ -330,13 +332,15 @@ class DatabaseSeeder extends Seeder
 
         OrderItem::create(['order_id' => $o1->id, 'product_id' => $p1->id, 'quantity' => 1, 'unit_price' => 4800.00, 'total_price' => 4800.00]);
         OrderItem::create(['order_id' => $o1->id, 'product_id' => $p2->id, 'quantity' => 1, 'unit_price' => 9500.00, 'total_price' => 9500.00]);
-        Shipment::create(['order_id' => $o1->id, 'status' => 'delivered', 'customer_confirmation' => 'confirmed']);
-        Payment::create(['order_id' => $o1->id, 'payment_method' => 'cod', 'amount' => 14300.00, 'status' => 'completed', 'transaction_reference' => 'TXN-ALG-88912']);
+        Shipment::create(['order_id' => $o1->id, 'delivery_company_id' => 7, 'delivery_status' => 'delivered', 'customer_confirmation' => 'confirmed']);
+        Payment::create(['order_id' => $o1->id, 'mode' => 'cod', 'amount' => 14300.00, 'status' => 'paid']);
 
         $o2 = Order::create([
             'user_id' => $customer1->id,
             'supplier_id' => $supp2->id,
             'total_amount' => 7200.00,
+            'subtotal' => 7200.00,
+            'total' => 7200.00,
             'status' => 'shipped',
             'payment_method' => 'cod',
             'payment_status' => 'unpaid',
@@ -346,12 +350,14 @@ class DatabaseSeeder extends Seeder
         ]);
 
         OrderItem::create(['order_id' => $o2->id, 'product_id' => $p4->id, 'quantity' => 1, 'unit_price' => 7200.00, 'total_price' => 7200.00]);
-        Shipment::create(['order_id' => $o2->id, 'status' => 'shipped', 'customer_confirmation' => 'pending']);
+        Shipment::create(['order_id' => $o2->id, 'delivery_company_id' => 7, 'delivery_status' => 'shipped', 'customer_confirmation' => 'pending']);
 
         $o3 = Order::create([
             'user_id' => $customer2->id,
             'supplier_id' => $supp2->id,
             'total_amount' => 7900.00,
+            'subtotal' => 7900.00,
+            'total' => 7900.00,
             'status' => 'returned',
             'payment_method' => 'cod',
             'payment_status' => 'refunded',
@@ -362,7 +368,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         OrderItem::create(['order_id' => $o3->id, 'product_id' => $p5->id, 'quantity' => 1, 'unit_price' => 7900.00, 'total_price' => 7900.00]);
-        Shipment::create(['order_id' => $o3->id, 'status' => 'returned', 'customer_confirmation' => 'pending']);
+        Shipment::create(['order_id' => $o3->id, 'delivery_company_id' => 7, 'delivery_status' => 'returned', 'customer_confirmation' => 'pending']);
 
         ReturnTicket::create([
             'ticket_number' => 'RET-774812-20260901',

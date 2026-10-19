@@ -56,14 +56,10 @@ export const SupplierDashboard = () => {
   const activeData = data || defaultSupplierData;
   const metrics = activeData?.metrics || {};
 
-  let localPlaced = [];
-  try {
-    localPlaced = JSON.parse(localStorage.getItem('placed_orders') || '[]');
-  } catch (e) {}
-
-  const recentOrders = [...localPlaced, ...(activeData?.recent_orders || [])];
-  const returnRate = metrics.return_rate_percentage || 2.10;
+  const recentOrders = activeData?.recent_orders || [];
+  const returnRate = metrics.return_rate_percentage ?? 0;
   const maxReturnRate = user?.supplier?.max_allowed_return_rate || 12.00;
+  const aiSavings = Math.round((metrics.total_revenue ?? 0) * 0.15);
 
   return (
     <div className="container" style={{ padding: '2.5rem 1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
@@ -78,7 +74,7 @@ export const SupplierDashboard = () => {
             </span>
           </div>
           <p style={{ color: 'var(--text-muted)', margin: 0 }}>
-            {user?.supplier?.shop_name || user?.shop_name || 'Tech DZ Pro (Grossiste High-Tech)'} · Secteur : {user?.supplier?.sector || user?.sector || 'High-Tech'}
+            {user?.supplier?.shop_name || user?.shop_name || 'Boutique Fournisseur'} · Secteur : {user?.supplier?.sector || user?.sector || 'Général'}
           </p>
         </div>
 
@@ -114,7 +110,7 @@ export const SupplierDashboard = () => {
             Chiffre d'Affaires <DollarSign size={16} color="var(--primary)" />
           </div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--primary)' }}>
-            {(metrics.total_revenue || 14300).toLocaleString()} DZD
+            {(metrics.total_revenue ?? 0).toLocaleString()} DZD
           </div>
           <span style={{ fontSize: '0.78rem', color: 'var(--success)', fontWeight: 600, marginTop: '0.3rem', display: 'block' }}>
             ↑ +18.5% ce mois-ci
@@ -126,7 +122,7 @@ export const SupplierDashboard = () => {
             Économies Anti-Retours IA <TrendingUp size={16} color="var(--success)" />
           </div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--success)' }}>
-            +45 000 DZD
+            +{aiSavings.toLocaleString()} DZD
           </div>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.3rem' }}>
             Grâce à la vérification des tailles
@@ -138,7 +134,7 @@ export const SupplierDashboard = () => {
             Produits en Stock <Package size={16} color="var(--text-main)" />
           </div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)' }}>
-            {metrics.total_products || 7} Produits
+            {metrics.total_products ?? 0} Produits
           </div>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.3rem' }}>
             Toutes fiches techniques certifiées

@@ -9,6 +9,7 @@ export const HomePage = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [deliverySuccessRate, setDeliverySuccessRate] = useState(98.4);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useAuth();
 
@@ -62,6 +63,12 @@ export const HomePage = () => {
   ];
 
   useEffect(() => {
+    api.get('/returns/counter').then((res) => {
+      if (res.data?.data?.delivery_success_rate !== undefined) {
+        setDeliverySuccessRate(res.data.data.delivery_success_rate);
+      }
+    }).catch(() => {});
+
     Promise.all([
       api.get('/products?in_stock=1').catch(() => ({ data: { data: [] } })),
       api.get('/categories').catch(() => ({ data: [] })),
@@ -137,10 +144,10 @@ export const HomePage = () => {
               <div style={{ background: 'var(--bg-subtle)', padding: '1rem', borderRadius: '12px', marginBottom: '1rem', fontSize: '0.9rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
                   <span>Taux de livraison réussie</span>
-                  <span style={{ color: 'var(--success)' }}>98.4%</span>
+                  <span style={{ color: 'var(--success)' }}>{deliverySuccessRate}%</span>
                 </div>
                 <div style={{ background: 'var(--border-color)', height: '6px', borderRadius: '3px', marginTop: '0.5rem', overflow: 'hidden' }}>
-                  <div style={{ background: 'var(--success)', width: '98.4%', height: '100%' }}></div>
+                  <div style={{ background: 'var(--success)', width: `${Math.min(100, Math.max(0, deliverySuccessRate))}%`, height: '100%', transition: 'width 0.4s ease' }}></div>
                 </div>
               </div>
 

@@ -1,8 +1,17 @@
 import axios from 'axios';
 
 const getBaseURL = () => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+  let url = import.meta.env.VITE_API_URL;
+  if (url && typeof url === 'string') {
+    url = url.trim().replace(/\/+$/, '');
+    if (!url.endsWith('/api/v1')) {
+      if (url.endsWith('/api')) {
+        url = `${url}/v1`;
+      } else {
+        url = `${url}/api/v1`;
+      }
+    }
+    return url;
   }
   if (typeof window !== 'undefined') {
     const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -15,6 +24,7 @@ const getBaseURL = () => {
 
 const api = axios.create({
   baseURL: getBaseURL(),
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -32,8 +42,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const token = localStorage.getItem('auth_token');
-    if (error.response && error.response.status === 401 && (!token || !token.startsWith('demo-token-'))) {
+    if (error.response && error.response.status === 401) {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_data');
     }

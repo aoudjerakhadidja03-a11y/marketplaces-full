@@ -71,21 +71,17 @@ export const CustomerOrders = () => {
 
   const fetchOrders = () => {
     setLoading(true);
-    let local = [];
-    try {
-      local = JSON.parse(localStorage.getItem('placed_orders') || '[]');
-    } catch (e) {}
 
     api.get('/orders')
       .then((res) => {
-        if (res.data?.data && res.data.data.length > 0) {
-          setOrders([...local, ...res.data.data]);
+        if (res.data?.data && Array.isArray(res.data.data)) {
+          setOrders(res.data.data);
         } else {
-          setOrders([...local, ...defaultSampleOrders]);
+          setOrders([]);
         }
       })
       .catch(() => {
-        setOrders([...local, ...defaultSampleOrders]);
+        setOrders([]);
       })
       .finally(() => setLoading(false));
   };

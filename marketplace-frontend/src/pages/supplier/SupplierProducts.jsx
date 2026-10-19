@@ -32,13 +32,46 @@ export const SupplierProducts = () => {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
+  const getCategoryDefaultImage = (catId) => {
+    const cat = categories.find(c => String(c.id) === String(catId));
+    const catName = (cat?.name || '').toLowerCase();
+    if (catName.includes('mode') || catName.includes('vêtement') || catName.includes('accessoire') || catName.includes('sac')) {
+      return 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=700&q=80';
+    }
+    if (catName.includes('maison') || catName.includes('électroménager')) {
+      return 'https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=700&q=80';
+    }
+    if (catName.includes('beauté') || catName.includes('cosmétique')) {
+      return 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=700&q=80';
+    }
+    if (catName.includes('outil') || catName.includes('matériel')) {
+      return 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=700&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=700&q=80';
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const fetchSupplierProducts = () => {
     setLoading(true);
-    api.get('/products?in_stock=0')
+    api.get('/supplier/products')
       .then((res) => {
-        setProducts(res.data.data || []);
+        setProducts(res.data.data || res.data || []);
       })
-      .catch((err) => console.error(err))
+      .catch(() => {
+        api.get('/products?in_stock=0')
+          .then((res) => setProducts(res.data.data || res.data || []))
+          .catch(() => {});
+      })
       .finally(() => setLoading(false));
   };
 
@@ -89,13 +122,15 @@ export const SupplierProducts = () => {
       'Guide Anti-Retour': specGuide,
     };
 
+    const finalImage = imageUrl.trim() || getCategoryDefaultImage(categoryId);
+
     const payload = {
       category_id: categoryId,
       name,
       description,
       price: Number(price),
       stock: Number(stock),
-      image_url: imageUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80',
+      image_url: finalImage,
       return_risk_score: returnRiskScore,
       specifications: specsObj,
     };
@@ -317,8 +352,31 @@ export const SupplierProducts = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">URL Image Unsplash (Optionnel)</label>
-                <input type="url" className="form-input" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://images.unsplash.com/..." />
+                <label className="form-label">Photo du Produit</label>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.6rem' }}>
+                  <input type="url" className="form-input" style={{ flex: 1 }} value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="URL de l'image (https://...) ou choisissez un fichier ci-dessous" />
+                  {(imageUrl || categoryId) && (
+                    <img
+                      src={imageUrl || getCategoryDefaultImage(categoryId)}
+                      alt="Aperçu"
+                      style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+                    />
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                    📁 Importer une photo depuis l'ordinateur
+                    <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl(getCategoryDefaultImage(categoryId))}
+                    className="btn btn-outline btn-sm"
+                    style={{ fontSize: '0.78rem' }}
+                  >
+                    ✨ Utiliser la photo suggérée pour cette catégorie
+                  </button>
+                </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', marginTop: '1rem' }}>

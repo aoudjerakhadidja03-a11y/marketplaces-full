@@ -19,7 +19,7 @@ export const LoginPage = () => {
   const handleQuickLogin = async (targetRole) => {
     setLoading(true);
     setError('');
-    const targetEmail = targetRole === 'supplier' ? 'fournisseur.demo@marketeria.dz' : 'client.demo@marketeria.dz';
+    const targetEmail = targetRole === 'supplier' ? 'karim@techdz.com' : 'yacine@gmail.com';
     try {
       const loggedUser = await login(targetEmail, 'password123');
       if (targetRole === 'supplier' || loggedUser?.role === 'supplier') {
@@ -28,7 +28,7 @@ export const LoginPage = () => {
         navigate('/customer/dashboard');
       }
     } catch (e) {
-      navigate(targetRole === 'supplier' ? '/supplier/dashboard' : '/customer/dashboard');
+      setError(e.message || 'Erreur de connexion.');
     } finally {
       setLoading(false);
     }
@@ -41,16 +41,16 @@ export const LoginPage = () => {
 
     try {
       const cleanEmail = (email || '').trim().toLowerCase();
-      const loggedUser = await login(cleanEmail, password || 'password123');
-      if (loggedUser?.role === 'admin') navigate('/admin');
-      else if (loggedUser?.role === 'supplier' || cleanEmail.includes('supplier') || cleanEmail.includes('fournisseur')) {
+      const loggedUser = await login(cleanEmail, password);
+      if (loggedUser?.role === 'admin') {
+        navigate('/admin');
+      } else if (loggedUser?.role === 'supplier') {
         navigate('/supplier/dashboard');
       } else {
         navigate('/customer/dashboard');
       }
     } catch (err) {
-      // Fallback navigation
-      navigate('/customer/dashboard');
+      setError(err.message || 'Identifiants incorrects. Veuillez vérifier vos accès.');
     } finally {
       setLoading(false);
     }

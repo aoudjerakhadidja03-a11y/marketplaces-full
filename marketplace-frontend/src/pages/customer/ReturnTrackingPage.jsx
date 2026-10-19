@@ -225,13 +225,13 @@ export const ReturnTrackingPage = () => {
       }
 
       if (ordersRes?.data?.data && Array.isArray(ordersRes.data.data) && ordersRes.data.data.length > 0) {
-        setOrders([...localOrders, ...ordersRes.data.data]);
+        setOrders(ordersRes.data.data);
       } else {
-        setOrders([...localOrders, ...defaultSampleOrders]);
+        setOrders(defaultSampleOrders);
       }
     } catch (e) {
       setTickets(defaultSampleTickets);
-      setOrders([...localOrders, ...defaultSampleOrders]);
+      setOrders(defaultSampleOrders);
     } finally {
       setLoading(false);
     }
@@ -377,6 +377,13 @@ export const ReturnTrackingPage = () => {
       setShowCreateModal(false);
       setActionSuccessMsg(`Demande #${createdTicketNumber} créée ! Bordereau Yalidine généré.`);
       setSelectedTicketForSlip(newTicketObj);
+
+      api.get('/returns/counter').then((cRes) => {
+        if (cRes.data?.data) setMetrics(cRes.data.data);
+      }).catch(() => {});
+      api.get('/orders').then((oRes) => {
+        if (oRes.data?.data && Array.isArray(oRes.data.data)) setOrders(oRes.data.data);
+      }).catch(() => {});
     } catch (err) {
       const fallbackObj = {
         id: Date.now(),

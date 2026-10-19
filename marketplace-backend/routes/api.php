@@ -42,8 +42,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/suppliers', [SupplierController::class, 'index']);
     Route::get('/suppliers/{id}', [SupplierController::class, 'show']);
 
-    // Public Return Tracking Lookup
+    // Public Return Tracking Lookup & Real-time Platform Counter
     Route::get('/returns/track/{query}', [ReturnTicketController::class, 'track']);
+    Route::get('/returns/counter', [ReturnTicketController::class, 'getCounter']);
 
     // Authenticated Private Routes
     Route::middleware('auth:sanctum')->group(function () {
@@ -54,7 +55,6 @@ Route::prefix('v1')->group(function () {
         Route::get('/returns', [ReturnTicketController::class, 'index']);
         Route::post('/returns', [ReturnTicketController::class, 'store']);
         Route::put('/returns/{id}/status', [ReturnTicketController::class, 'updateStatus']);
-        Route::get('/returns/counter', [ReturnTicketController::class, 'getCounter']);
 
         // N8N Webhook Triggers
         Route::post('/n8n/webhook/return-created', [N8nWebhookController::class, 'handleReturnCreated']);

@@ -28,16 +28,6 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      if (token.startsWith('demo-token-')) {
-        // Active demo session: validate existing user from localStorage and never wipe
-        const savedUser = safeJsonParse('user_data', null);
-        if (savedUser) {
-          setUser(savedUser);
-        }
-        setLoading(false);
-        return;
-      }
-
       api.get('/me')
         .then((res) => {
           if (res.data?.user) {
@@ -75,42 +65,11 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         return userData;
       }
+      throw new Error(res.data?.message || 'Identifiants incorrects.');
     } catch (err) {
-      console.warn('Backend login unavailable, creating demo session:', err);
+      const message = err.response?.data?.message || err.message || 'Identifiants incorrects (Email ou mot de passe invalide).';
+      throw new Error(message);
     }
-
-    // Fallback: generate session for demo without blocking
-    const storedUsers = safeJsonParse('registered_users', []);
-    const cleanEmail = (email || '').trim().toLowerCase();
-    const matched = storedUsers.find(u => u.email && u.email.toLowerCase() === cleanEmail);
-
-    const role = matched?.role || (cleanEmail.includes('admin') ? 'admin' : cleanEmail.includes('supplier') || cleanEmail.includes('fournisseur') || cleanEmail.includes('vendeur') ? 'supplier' : 'customer');
-    const name = matched?.name || (cleanEmail.split('@')[0] || 'Utilisateur').replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-
-    const mockToken = 'demo-token-' + Date.now();
-    const mockUser = {
-      id: matched?.id || Date.now(),
-      name: name,
-      email: cleanEmail || 'demo.user@marketeria.dz',
-      phone: matched?.phone || '0774159472',
-      role: role,
-      shop_name: matched?.shop_name || (role === 'supplier' ? 'Boutique Certifiée DZ' : undefined),
-      sector: matched?.sector || (role === 'supplier' ? 'Électronique & High-Tech' : undefined),
-      address: matched?.address || 'Alger, Algérie',
-      supplier: role === 'supplier' ? {
-        shop_name: matched?.shop_name || 'Boutique Certifiée DZ',
-        sector: matched?.sector || 'Électronique & High-Tech',
-        address: matched?.address || 'Alger, Algérie',
-        max_allowed_return_rate: 12.00,
-      } : undefined,
-      created_at: new Date().toISOString()
-    };
-
-    localStorage.setItem('auth_token', mockToken);
-    localStorage.setItem('user_data', JSON.stringify(mockUser));
-    setToken(mockToken);
-    setUser(mockUser);
-    return mockUser;
   };
 
   const register = async (formData) => {
@@ -124,44 +83,15 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         return userData;
       }
+      throw new Error(res.data?.message || 'Erreur lors de l\'inscription.');
     } catch (err) {
-      console.warn('Backend register unavailable, creating local demo user:', err);
+      const message = err.response?.data?.message || err.message || 'Erreur lors de l\'inscription.';
+      throw new Error(message);
     }
-
-    // Fallback: save user locally and create active session
-    const cleanEmail = (formData.email || `user.${Date.now()}@marketeria.dz`).trim().toLowerCase();
-    const mockToken = 'demo-token-' + Date.now();
-    const targetRole = formData.role || 'customer';
-    const mockUser = {
-      id: Date.now(),
-      name: formData.name || (targetRole === 'supplier' ? 'Fournisseur Certifié DZ' : 'Client Marketeria'),
-      email: cleanEmail,
-      phone: formData.phone || '0774159472',
-      role: targetRole,
-      shop_name: formData.shop_name || (targetRole === 'supplier' ? 'Ma Boutique Pro DZ' : undefined),
-      sector: formData.sector || (targetRole === 'supplier' ? 'Commerce Général' : undefined),
-      address: formData.address || 'Alger, Algérie',
-      supplier: targetRole === 'supplier' ? {
-        shop_name: formData.shop_name || 'Ma Boutique Pro DZ',
-        sector: formData.sector || 'Commerce Général',
-        address: formData.address || 'Alger, Algérie',
-        max_allowed_return_rate: 12.00,
-      } : undefined,
-      created_at: new Date().toISOString()
-    };
-
-    const storedUsers = safeJsonParse('registered_users', []);
-    storedUsers.push(mockUser);
-    localStorage.setItem('registered_users', JSON.stringify(storedUsers));
-    localStorage.setItem('auth_token', mockToken);
-    localStorage.setItem('user_data', JSON.stringify(mockUser));
-    setToken(mockToken);
-    setUser(mockUser);
-    return mockUser;
   };
 
   const logout = () => {
-    if (token && !token.startsWith('demo-token-')) {
+    if (token) {
       api.post('/logout').catch(() => {});
     }
     localStorage.removeItem('auth_token');

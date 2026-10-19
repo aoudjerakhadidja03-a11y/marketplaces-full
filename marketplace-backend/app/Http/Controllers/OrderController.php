@@ -30,7 +30,7 @@ class OrderController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
-            'payment_method' => 'required|in:cod',
+            'payment_method' => 'required|in:cod,advance,online',
             'shipping_address' => 'required|string',
             'phone' => 'required|string',
         ]);

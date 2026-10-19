@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\SuspiciousIncident;
+use App\Models\ReturnTicket;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -18,7 +19,11 @@ class DashboardController extends Controller
         $totalOrders = Order::where('user_id', $user->id)->count();
         $pendingOrders = Order::where('user_id', $user->id)->whereIn('status', ['pending', 'confirmed', 'preparing', 'shipped'])->count();
         $deliveredOrders = Order::where('user_id', $user->id)->whereIn('status', ['delivered', 'confirmed_by_customer'])->count();
-        $totalSpent = Order::where('user_id', $user->id)->where('payment_status', 'paid')->sum('total_amount');
+        $totalSpent = Order::where('user_id', $user->id)->whereNotIn('status', ['cancelled', 'refused'])->sum('total_amount');
+
+        $totalReturns = ReturnTicket::where('customer_id', $user->id)->count();
+        $pendingReturns = ReturnTicket::where('customer_id', $user->id)->where('status', 'pending_approval')->count();
+        $refundedAmount = ReturnTicket::where('customer_id', $user->id)->where('status', 'refunded')->sum('refund_amount');
 
         $recentOrders = Order::with(['items.product', 'supplier', 'shipment'])
             ->where('user_id', $user->id)
@@ -32,6 +37,9 @@ class DashboardController extends Controller
                 'pending_orders' => $pendingOrders,
                 'delivered_orders' => $deliveredOrders,
                 'total_spent' => round($totalSpent, 2),
+                'total_returns' => $totalReturns,
+                'pending_returns' => $pendingReturns,
+                'refunded_amount' => round($refundedAmount, 2),
                 'user_risk_level' => $user->risk_level,
             ],
             'recent_orders' => $recentOrders,

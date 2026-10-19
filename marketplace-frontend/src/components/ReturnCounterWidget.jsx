@@ -27,6 +27,7 @@ export const ReturnCounterWidget = ({ userRole = 'customer', onOpenAiModal }) =>
     }
   ]);
 
+  const [userOrders, setUserOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
 
@@ -34,6 +35,7 @@ export const ReturnCounterWidget = ({ userRole = 'customer', onOpenAiModal }) =>
   const [showManualCreate, setShowManualCreate] = useState(false);
   const [newTicket, setNewTicket] = useState({
     ticket_number: `RET-${Math.floor(100000 + Math.random() * 900000)}-2026`,
+    order_id: '',
     reason_category: 'size_issue',
     reason_details: '',
     refund_amount: '',
@@ -42,9 +44,10 @@ export const ReturnCounterWidget = ({ userRole = 'customer', onOpenAiModal }) =>
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [counterRes, ticketsRes] = await Promise.all([
+      const [counterRes, ticketsRes, ordersRes] = await Promise.all([
         api.get('/returns/counter').catch(() => null),
         api.get('/returns').catch(() => null),
+        api.get('/orders').catch(() => null),
       ]);
 
       if (counterRes?.data?.success) {
@@ -52,6 +55,12 @@ export const ReturnCounterWidget = ({ userRole = 'customer', onOpenAiModal }) =>
       }
       if (ticketsRes?.data?.success && Array.isArray(ticketsRes.data.data) && ticketsRes.data.data.length > 0) {
         setTickets(ticketsRes.data.data);
+      }
+      if (ordersRes?.data?.data && Array.isArray(ordersRes.data.data)) {
+        setUserOrders(ordersRes.data.data);
+        if (!newTicket.order_id && ordersRes.data.data.length > 0) {
+          setNewTicket(prev => ({ ...prev, order_id: String(ordersRes.data.data[0].id) }));
+        }
       }
     } catch (err) {
       console.error(err);
@@ -66,45 +75,28 @@ export const ReturnCounterWidget = ({ userRole = 'customer', onOpenAiModal }) =>
 
   const handleManualCreateSubmit = async (e) => {
     e.preventDefault();
-    const created = {
-      id: Date.now(),
-      ticket_number: newTicket.ticket_number,
-      order_id: 1,
-      reason_category: newTicket.reason_category,
-      reason_details: newTicket.reason_details,
-      status: 'pending_approval',
-      refund_amount: parseFloat(newTicket.refund_amount || 4800.00),
-      created_at: new Date().toISOString(),
-      ai_prevention_advice: 'Demande manuelle enregistrée. Le fournisseur traitera ce ticket sous 24h.',
-    };
+    const targetOrderId = newTicket.order_id ? parseInt(newTicket.order_id) : (userOrders[0]?.id || 1);
 
     try {
       const res = await api.post('/returns', {
-        order_id: 1,
+        order_id: targetOrderId,
         reason_category: newTicket.reason_category,
         reason_details: newTicket.reason_details,
       });
-      if (res.data?.data) {
-        setTickets(prev => [res.data.data, ...prev]);
-      } else {
-        setTickets(prev => [created, ...prev]);
-      }
-    } catch (err) {
-      setTickets(prev => [created, ...prev]);
-    }
 
-    setMetrics(prev => ({
-      ...prev,
-      total_returns: prev.total_returns + 1,
-      pending_returns: prev.pending_returns + 1,
-    }));
-    setShowManualCreate(false);
-    setNewTicket({
-      ticket_number: `RET-${Math.floor(100000 + Math.random() * 900000)}-2026`,
-      reason_category: 'size_issue',
-      reason_details: '',
-      refund_amount: '',
-    });
+      alert(res.data?.message || 'Demande de retour enregistrée avec succès.');
+      setShowManualCreate(false);
+      setNewTicket({
+        ticket_number: `RET-${Math.floor(100000 + Math.random() * 900000)}-2026`,
+        order_id: userOrders[0]?.id ? String(userOrders[0].id) : '',
+        reason_category: 'size_issue',
+        reason_details: '',
+        refund_amount: '',
+      });
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Erreur lors de la déclaration du retour.');
+    }
   };
 
   const filteredTickets = tickets.filter(t => filterStatus === 'all' || t.status === filterStatus);
@@ -202,6 +194,33 @@ export const ReturnCounterWidget = ({ userRole = 'customer', onOpenAiModal }) =>
                 <label className="form-label">Numéro de Ticket (Auto-généré)</label>
                 <input type="text" className="form-input" disabled value={newTicket.ticket_number} />
               </div>
+
+              {userOrders.length > 0 && (
+                <div className="form-group">
+                  <label className="form-label">Commande Concernée *</label>
+                  <select
+                    className="form-select"
+                    required
+                    value={newTicket.order_id}
+                    onChange={(e) => {
+                      const selId = e.target.value;
+                      const found = userOrders.find(o => String(o.id) === String(selId));
+                      setNewTicket({
+                        ...newTicket,
+                        order_id: selId,
+                        refund_amount: found ? String(found.total_amount) : newTicket.refund_amount
+                      });
+                    }}
+                  >
+                    <option value="">Sélectionnez la commande à retourner...</option>
+                    {userOrders.map((ord) => (
+                      <option key={ord.id} value={ord.id}>
+                        Commande #{ord.id} — {parseFloat(ord.total_amount).toLocaleString()} DZD ({ord.status})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="form-group">
                 <label className="form-label">Motif du Retour *</label>

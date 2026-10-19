@@ -1,0 +1,12 @@
+# Root .gitignore to protect secrets and database dumps
+*.sql
+*.dmp
+*.bak
+sauvegarde_mysql_data/
+storage/
+.env
+.env.local
+node_modules/
+vendor/
+dist/
+.vercel/

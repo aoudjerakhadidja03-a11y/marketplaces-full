@@ -12,14 +12,18 @@ export const OrderChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const fetchConversation = () => {
+    setError('');
     api.get(`/conversations/order/${orderId}`)
       .then((res) => {
         setConversation(res.data);
         setMessages(res.data.messages || []);
       })
-      .catch((err) => alert(err.response?.data?.message || 'Erreur chargement de la discussion.'))
+      .catch((err) => {
+        setError(err.response?.data?.message || 'Erreur lors du chargement de la discussion.');
+      })
       .finally(() => setLoading(false));
   };
 
@@ -44,6 +48,19 @@ export const OrderChatPage = () => {
   };
 
   if (loading) return <div className="container" style={{ padding: '3rem' }}>Chargement de la messagerie...</div>;
+
+  if (error) {
+    return (
+      <div className="container" style={{ padding: '3rem 1.5rem', maxWidth: '800px' }}>
+        <div className="card" style={{ padding: '2.5rem', textAlign: 'center' }}>
+          <MessageSquare size={44} color="var(--primary)" style={{ marginBottom: '1rem' }} />
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>Discussion Non Disponible</h3>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>{error}</p>
+          <button onClick={() => window.history.back()} className="btn btn-primary btn-sm">Retour aux commandes</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container" style={{ padding: '2.5rem 1.5rem', maxWidth: '800px' }}>
