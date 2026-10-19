@@ -3,7 +3,7 @@ import axios from 'axios';
 const getBaseURL = () => {
   let url = import.meta.env.VITE_API_URL;
   if (url && typeof url === 'string') {
-    url = url.trim().replace(/\/+$/, '');
+    url = url.replace(/[\uFEFF\r\n]/g, '').trim().replace(/\/+$/, '');
     if (!url.endsWith('/api/v1')) {
       if (url.endsWith('/api')) {
         url = `${url}/v1`;
@@ -28,6 +28,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'Bypass-Tunnel-Reminder': 'true',
   },
 });
 
