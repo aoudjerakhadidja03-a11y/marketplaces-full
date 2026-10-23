@@ -12,3 +12,7 @@ dist/
 .vercel/
 *.exe
 .env.production
+FICHE_TECHNIQUE_DEPOT_INAPI.txt
+MARKETERIA_CODE_SOURCE_OFFICIEL_INAPI.zip
+MARKETERIA_SOURCE_CD/
+sauvegarde_mysql_data/
