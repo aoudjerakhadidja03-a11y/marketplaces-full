@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        if (app()->isProduction()) {
+        if (app()->isProduction() && !env('FORCE_SEED', false) && User::count() > 0) {
             throw new \RuntimeException('Demo data seeding is disabled in production.');
         }
 

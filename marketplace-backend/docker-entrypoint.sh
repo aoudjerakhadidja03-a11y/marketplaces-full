@@ -6,9 +6,17 @@ if [ -z "${APP_KEY:-}" ]; then
     exit 1
 fi
 
-php artisan migrate --force
 mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
+
+if [ -n "${DB_HOST:-}" ]; then
+    echo "Running database migrations..."
+    php artisan migrate --force || true
+    if [ "${FORCE_SEED:-false}" = "true" ]; then
+        echo "Seeding database..."
+        php artisan db:seed --force || true
+    fi
+fi
 
 exec "$@"

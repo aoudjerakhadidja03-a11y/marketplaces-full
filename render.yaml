@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: marketeria-backend
+    runtime: docker
+    rootDir: marketplace-backend
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: APP_NAME
+        value: Marketeria
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        value: "base64:OLLuxCRM7B5U7BitpubDn1emRx9YcFrEnLPYuBDErkA="
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_PORT
+        value: "3306"
+      - key: FORCE_SEED
+        value: "true"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://marketplace-frontend-aoudjera-khadidja.vercel.app"
